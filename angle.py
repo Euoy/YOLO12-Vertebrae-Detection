@@ -12,7 +12,7 @@ original_data_path = "E:\\bone_dataset"
 c2_coords_csv_path = "E:\\YOLO11-Vertebrae-Detection\\results\\c2.csv"
 c7_coords_csv_path = "E:\\YOLO11-Vertebrae-Detection\\results\\c7.csv"
 c2_canny_threshold = [190, 230]
-c7_canny_threshold = [150, 200]
+c7_canny_threshold = [140, 180]
 NUMBER_OF_DATASETS = 5
 """
 Data Constants
@@ -89,6 +89,32 @@ def find_c2_bottom_points() -> list:
 
     return [[bottom_left_x, bottom_left_y], [bottom_right_x, bottom_right_y]]
 
+def find_c7_top_points() -> list:
+
+    left_half_x = []
+    left_half_y = []
+    right_half_x = []
+    right_half_y = []
+
+    # split the points of edges to left half and right half
+    for i in range(len(c7_coords)):
+        if(c7_coords[i][0] < c7_img_width / 2):
+            left_half_x.append(c7_coords[i][0])
+            left_half_y.append(c7_coords[i][1])
+        elif (c7_coords[i][0] > c7_img_width / 2 and (c7_coords[i][1] <= c7_img_height * right_half_ty_factor and c7_coords[i][1] >= c7_img_height * right_half_by_factor)):
+            right_half_x.append(c7_coords[i][0])
+            right_half_y.append(c7_coords[i][1])
+
+    # find the top left and right points
+    index = np.where(left_half_y == np.min(left_half_y))[0][0]
+    top_left_y = left_half_y[index]
+    top_left_x = left_half_x[index]
+    index = np.where(right_half_x == np.max(right_half_x))[0][0]
+    top_right_y = right_half_y[index]
+    top_right_x = right_half_x[index]
+
+    return [[top_left_x, top_left_y], [top_right_x, top_right_y]]
+
 def draw_lines(original_img, final_c2_coords):
 
     #Find and draw the line equation
@@ -153,23 +179,24 @@ if __name__ == "__main__":
         for i in range(len(c7_index_to_pop)):
             c7_coords.pop(c7_index_to_pop[i] - i)
 
-        edges = cv2.cvtColor(c2_edges, cv2.COLOR_GRAY2BGR)
+        edges = cv2.cvtColor(c7_edges, cv2.COLOR_GRAY2BGR)
 
-        c2_bottom_points = find_c2_bottom_points()
+        # c2_bottom_points = find_c2_bottom_points()
+        c7_top_points = find_c7_top_points()
 
-        # for i in range(len(right_half_x)):
-        #     cv2.circle(edges, (right_half_x[i], right_half_y[i]), 1, (0, 0, 255), -1)
+        # cv2.circle(edges, (c2_bottom_points[0][0], c2_bottom_points[0][1]), 3, (0, 0, 255), -1)
+        # cv2.circle(edges, (c2_bottom_points[1][0], c2_bottom_points[1][1]), 3, (0, 0, 255), -1)
+        cv2.circle(edges, (c7_top_points[0][0], c7_top_points[0][1]), 3, (0, 0, 255), -1)
+        cv2.circle(edges, (c7_top_points[1][0], c7_top_points[1][1]), 3, (0, 0, 255), -1)
 
-        cv2.circle(edges, (c2_bottom_points[0][0], c2_bottom_points[0][1]), 3, (0, 0, 255), -1)
-        cv2.circle(edges, (c2_bottom_points[1][0], c2_bottom_points[1][1]), 3, (0, 0, 255), -1)
-
-        final_c2_coords = coords_translate(c2_bottom_points, img_number)
-        line_img = draw_lines(original_img, final_c2_coords)
+        # final_c2_coords = coords_translate(c2_bottom_points, img_number)
+        # final_c7_coords = coords_translate(c7_top_points, img_number)
+        # line_img = draw_lines(original_img, final_c2_coords)
         
-        vector1 = np.array(final_c2_coords[0]) - np.array(final_c2_coords[1])
-        print(vector1)
-        
+        # vector1 = np.array(final_c2_coords[0]) - np.array(final_c2_coords[1])
+        # vector2 = np.array(final_c7_coords[0]) - np.array(final_c7_coords[1])
         
         cv2.imshow("img", edges)
-        cv2.imshow("line", line_img)
+        cv2.imshow("c7", c7_img)
+        # cv2.imshow("line", line_img)
         cv2.waitKey(0)
