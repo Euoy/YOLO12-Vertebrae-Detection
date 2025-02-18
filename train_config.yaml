@@ -1,0 +1,11 @@
+train: E:\yolo\train_data\train
+val: E:\yolo\train_data\val
+test: E:\yolo\train_data\test
+
+names:
+  0: c2
+  1: c3
+  2: c4
+  3: c5
+  4: c6
+  5: c7
