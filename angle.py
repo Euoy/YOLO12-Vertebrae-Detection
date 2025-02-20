@@ -37,31 +37,57 @@ def edge_detection(img, thresholds):
 
     return edges
 
-def coords_translate(points_to_transfer: list, original_img_number):
+def coords_translate(points_to_transfer: list, original_img_number, c):
 
-    c2_coords = [
+    if c == "c2":
+        c2_coords = [
+                [
+                    original_c2_coords.loc[original_c2_coords["picture_name"] == (f"{original_img_number}.png")].values[0][1],
+                    original_c2_coords.loc[original_c2_coords["picture_name"] == (f"{original_img_number}.png")].values[0][2]
+                ],
+                [
+                    original_c2_coords.loc[original_c2_coords["picture_name"] == (f"{original_img_number}.png")].values[0][3],
+                    original_c2_coords.loc[original_c2_coords["picture_name"] == (f"{original_img_number}.png")].values[0][4]
+                ]
+            ]
+        final_c2_coords = [
             [
-                original_c2_coords.loc[original_c2_coords["picture_name"] == (f"{original_img_number}.png")].values[0][1],
-                original_c2_coords.loc[original_c2_coords["picture_name"] == (f"{original_img_number}.png")].values[0][2]
+                c2_coords[0][0] + points_to_transfer[0][0],
+                c2_coords[0][1] + points_to_transfer[0][1]
             ],
             [
-                original_c2_coords.loc[original_c2_coords["picture_name"] == (f"{original_img_number}.png")].values[0][3],
-                original_c2_coords.loc[original_c2_coords["picture_name"] == (f"{original_img_number}.png")].values[0][4]
+                c2_coords[1][0] - (c2_img_width - points_to_transfer[1][0]),
+                c2_coords[1][1] - (c2_img_height - points_to_transfer[1][1])
             ]
         ]
-    final_c2_coords = [
-        [
-            c2_coords[0][0] + points_to_transfer[0][0],
-            c2_coords[0][1] + points_to_transfer[0][1]
-        ],
-        [
-            c2_coords[1][0] - (c2_img_width - points_to_transfer[1][0]),
-            c2_coords[1][1] - (c2_img_height - points_to_transfer[1][1])
+        final_c2_coords = np.int32(final_c2_coords)
+        
+        return final_c2_coords
+
+    elif c == "c7":
+        c7_coords = [
+                [
+                    original_c7_coords.loc[original_c7_coords["picture_name"] == (f"{original_img_number}.png")].values[0][1],
+                    original_c7_coords.loc[original_c7_coords["picture_name"] == (f"{original_img_number}.png")].values[0][2]
+                ],
+                [
+                    original_c7_coords.loc[original_c7_coords["picture_name"] == (f"{original_img_number}.png")].values[0][3],
+                    original_c7_coords.loc[original_c7_coords["picture_name"] == (f"{original_img_number}.png")].values[0][4]
+                ]
+            ]
+        final_c7_coords = [
+            [
+                c7_coords[0][0] + points_to_transfer[0][0],
+                c7_coords[0][1] + points_to_transfer[0][1]
+            ],
+            [
+                c7_coords[1][0] - (c7_img_width - points_to_transfer[1][0]),
+                c7_coords[1][1] - (c7_img_height - points_to_transfer[1][1])
+            ]
         ]
-    ]
-    final_c2_coords = np.int32(final_c2_coords)
-    
-    return final_c2_coords
+        final_c7_coords = np.int32(final_c7_coords)
+        
+        return final_c7_coords
 
 def find_c2_bottom_points() -> list:
 
@@ -75,7 +101,7 @@ def find_c2_bottom_points() -> list:
         if(c2_coords[i][0] < c2_img_width / 2):
             left_half_x.append(c2_coords[i][0])
             left_half_y.append(c2_coords[i][1])
-        elif (c2_coords[i][0] > c2_img_width / 2 and (c2_coords[i][1] <= c2_img_height * right_half_ty_factor and c2_coords[i][1] >= c2_img_height * right_half_by_factor)):
+        elif(c2_coords[i][0] > c2_img_width / 2 and (c2_coords[i][1] <= c2_img_height * right_half_ty_factor and c2_coords[i][1] >= c2_img_height * right_half_by_factor)):
             right_half_x.append(c2_coords[i][0])
             right_half_y.append(c2_coords[i][1])
 
@@ -101,8 +127,8 @@ def find_c7_top_points() -> list:
         if(c7_coords[i][0] < c7_img_width / 2):
             left_half_x.append(c7_coords[i][0])
             left_half_y.append(c7_coords[i][1])
-        elif (c7_coords[i][0] > c7_img_width / 2 and (c7_coords[i][1] <= c7_img_height * right_half_ty_factor and c7_coords[i][1] >= c7_img_height * right_half_by_factor)):
-            right_half_x.append(c7_coords[i][0])
+        elif (c7_coords[i][0] > c7_img_width / 2):
+            right_half_x.append(c7_coords[i][0]) 
             right_half_y.append(c7_coords[i][1])
 
     # find the top left and right points
@@ -125,6 +151,12 @@ def draw_lines(original_img, final_c2_coords):
 
     return line
 
+def get_vetical_vector(vector):
+    return [vector[1], -vector[0]]
+
+def get_angle(vector1, vector2):
+    return np.arccos(np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2)))
+
 """
 Function defs
 """
@@ -136,6 +168,7 @@ if __name__ == "__main__":
     """
 
     original_c2_coords = pandas.read_csv(c2_coords_csv_path)
+    original_c7_coords = pandas.read_csv(c7_coords_csv_path)
     right_half_ty_factor = 0.9
     right_half_by_factor = 0.75
     c2_x_offset = 20
@@ -181,7 +214,7 @@ if __name__ == "__main__":
 
         edges = cv2.cvtColor(c7_edges, cv2.COLOR_GRAY2BGR)
 
-        # c2_bottom_points = find_c2_bottom_points()
+        c2_bottom_points = find_c2_bottom_points()
         c7_top_points = find_c7_top_points()
 
         # cv2.circle(edges, (c2_bottom_points[0][0], c2_bottom_points[0][1]), 3, (0, 0, 255), -1)
@@ -189,14 +222,22 @@ if __name__ == "__main__":
         cv2.circle(edges, (c7_top_points[0][0], c7_top_points[0][1]), 3, (0, 0, 255), -1)
         cv2.circle(edges, (c7_top_points[1][0], c7_top_points[1][1]), 3, (0, 0, 255), -1)
 
-        # final_c2_coords = coords_translate(c2_bottom_points, img_number)
-        # final_c7_coords = coords_translate(c7_top_points, img_number)
-        # line_img = draw_lines(original_img, final_c2_coords)
+        final_c2_coords = coords_translate(c2_bottom_points, img_number, "c2")
+        final_c7_coords = coords_translate(c7_top_points, img_number, "c7")
+        line_img = draw_lines(original_img, final_c2_coords)
+        line_img = draw_lines(line_img, final_c7_coords)
         
-        # vector1 = np.array(final_c2_coords[0]) - np.array(final_c2_coords[1])
-        # vector2 = np.array(final_c7_coords[0]) - np.array(final_c7_coords[1])
+        vector1 = np.array(final_c2_coords[0]) - np.array(final_c2_coords[1])
+        vector1 = get_vetical_vector(vector1)
+        vector2 = np.array(final_c7_coords[0]) - np.array(final_c7_coords[1])
+        vector2 = get_vetical_vector(vector2)
+
+        angle = get_angle(vector1, vector2)
+        angle_degree = np.degrees(angle)
+        print(f"{angle} {angle_degree}")
+        
         
         cv2.imshow("img", edges)
-        cv2.imshow("c7", c7_img)
+        cv2.imshow("c7", line_img)
         # cv2.imshow("line", line_img)
         cv2.waitKey(0)
