@@ -11,8 +11,8 @@ c7_img_path = "E:\\YOLO11-Vertebrae-Detection"
 original_data_path = "E:\\bone_dataset"
 c2_coords_csv_path = "E:\\YOLO11-Vertebrae-Detection\\results\\c2.csv"
 c7_coords_csv_path = "E:\\YOLO11-Vertebrae-Detection\\results\\c7.csv"
-c2_canny_threshold = [190, 230]
-c7_canny_threshold = [140, 180]
+c2_canny_threshold = [100, 150]
+c7_canny_threshold = [100, 150]
 NUMBER_OF_DATASETS = 5
 """
 Data Constants
@@ -32,8 +32,12 @@ def edge_detection(img, thresholds):
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     sharped_img = cv2.equalizeHist(gray)
-    gussian_img = cv2.GaussianBlur(sharped_img, (5, 5), 0)
+    binarized_img = img_binarized(sharped_img, np.min(sharped_img) + 150)
+    gussian_img = cv2.GaussianBlur(binarized_img, (5, 5), 0)
     edges = cv2.Canny(gussian_img, thresholds[0], thresholds[1])
+    cv2.imshow("bin", binarized_img)
+    # cv2.imshow("img", gray)
+    # cv2.waitKey(0)
 
     return edges
 
@@ -157,6 +161,12 @@ def get_vetical_vector(vector):
 def get_angle(vector1, vector2):
     return np.arccos(np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2)))
 
+def img_binarized(img, threshold1, threshold2 = 255):
+
+    _, binary = cv2.threshold(img, threshold1, threshold2, cv2.THRESH_BINARY)
+
+    return binary
+
 """
 Function defs
 """
@@ -212,15 +222,15 @@ if __name__ == "__main__":
         for i in range(len(c7_index_to_pop)):
             c7_coords.pop(c7_index_to_pop[i] - i)
 
-        edges = cv2.cvtColor(c7_edges, cv2.COLOR_GRAY2BGR)
+        edges = cv2.cvtColor(c2_edges, cv2.COLOR_GRAY2BGR)
 
         c2_bottom_points = find_c2_bottom_points()
         c7_top_points = find_c7_top_points()
 
-        # cv2.circle(edges, (c2_bottom_points[0][0], c2_bottom_points[0][1]), 3, (0, 0, 255), -1)
-        # cv2.circle(edges, (c2_bottom_points[1][0], c2_bottom_points[1][1]), 3, (0, 0, 255), -1)
-        cv2.circle(edges, (c7_top_points[0][0], c7_top_points[0][1]), 3, (0, 0, 255), -1)
-        cv2.circle(edges, (c7_top_points[1][0], c7_top_points[1][1]), 3, (0, 0, 255), -1)
+        cv2.circle(edges, (c2_bottom_points[0][0], c2_bottom_points[0][1]), 3, (0, 0, 255), -1)
+        cv2.circle(edges, (c2_bottom_points[1][0], c2_bottom_points[1][1]), 3, (0, 0, 255), -1)
+        # cv2.circle(edges, (c7_top_points[0][0], c7_top_points[0][1]), 3, (0, 0, 255), -1)
+        # cv2.circle(edges, (c7_top_points[1][0], c7_top_points[1][1]), 3, (0, 0, 255), -1)
 
         final_c2_coords = coords_translate(c2_bottom_points, img_number, "c2")
         final_c7_coords = coords_translate(c7_top_points, img_number, "c7")
@@ -238,6 +248,5 @@ if __name__ == "__main__":
         
         
         cv2.imshow("img", edges)
-        cv2.imshow("c7", line_img)
-        # cv2.imshow("line", line_img)
+        cv2.imshow("line", line_img)
         cv2.waitKey(0)
