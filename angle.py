@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import pandas
+import math
 
 
 """
@@ -29,7 +30,8 @@ def line_eq(X, x1, y1, x2, y2):
 def edge_detection(img):
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    sharped_img = hist_strech(gray)
+    sharped_img = contrast(gray, 100)
+    sharped_img = hist_strech(sharped_img)
     sharped_img = cv2.equalizeHist(sharped_img)
     edges = img_binarized(sharped_img, np.min(sharped_img) + 150)
     cv2.imshow("bin", sharped_img)
@@ -190,6 +192,17 @@ def hist_strech(img):
 
     return cdf
 
+def contrast(img, contrast):
+
+    B = 0
+    c = contrast / 255
+    k = math.tan((45 + 44 * c) / 180 * math.pi)
+
+    img = (img - 127.5 * (1 - B)) * k + 127.5 * (1 + B)
+    img = np.clip(img, 0, 255).astype(np.uint8)
+
+    return img
+
 """
 Function defs
 """
@@ -203,7 +216,7 @@ if __name__ == "__main__":
     original_c2_coords = pandas.read_csv(c2_coords_csv_path)
     original_c7_coords = pandas.read_csv(c7_coords_csv_path)
     c2_right_y_factor = [0.7, 0.9]
-    c2_left_y_factor = [0.8, 0.95]
+    c2_left_y_factor = [0.8, 0.92]
     c2_right_x_factor = [0.2, 0.6]
     c2_left_x_factor = [0.1, 0.8]
     c7_right_y_factor = [0.1, 0.3]
