@@ -2,6 +2,7 @@ from ultralytics import YOLO
 import cv2
 import pandas
 import os
+import angle
 
 
 if __name__ == "__main__":
@@ -126,6 +127,11 @@ if __name__ == "__main__":
     for i in range(NUMBER_OF_BONES):
         save_csv(i)
 
-    print("done!")
+    print("cut and croods save done!")
+
+    angle_calculator = angle.AngleCalculator()
+    angle_calculator.run()
+
+    print("angle done!")
 
     
