@@ -12,7 +12,7 @@ c7_img_path = "E:\\YOLO11-Vertebrae-Detection"
 original_data_path = "E:\\bone_dataset"
 c2_coords_csv_path = "E:\\YOLO11-Vertebrae-Detection\\results\\c2.csv"
 c7_coords_csv_path = "E:\\YOLO11-Vertebrae-Detection\\results\\c7.csv"
-NUMBER_OF_DATASETS = 5
+NUMBER_OF_DATASETS = 16
 """
 Data Constants
 """
@@ -26,14 +26,14 @@ class AngleCalculator():
 
         self.original_c2_coords = pandas.read_csv(c2_coords_csv_path)
         self.original_c7_coords = pandas.read_csv(c7_coords_csv_path)
-        self.c2_right_y_factor = [0.7, 0.9]
+        self.c2_right_y_factor = [0.6, 0.865]
         self.c2_left_y_factor = [0.8, 0.92]
         self.c2_right_x_factor = [0.2, 0.6]
         self.c2_left_x_factor = [0.1, 0.8]
         self.c7_right_y_factor = [0.1, 0.3]
-        self.c7_left_y_factor = [0.2, 0.4]
+        self.c7_left_y_factor = [0.2, 0.35]
         self.c7_right_x_factor = [0, 1]
-        self.c7_left_x_factor = [0, 1]
+        self.c7_left_x_factor = [0.1, 1]
 
         """
         Initialization
@@ -99,8 +99,9 @@ class AngleCalculator():
 
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         sharped_img = self.contrast(gray, 100)
-        sharped_img = self.hist_strech(sharped_img)
         sharped_img = cv2.equalizeHist(sharped_img)
+        sharped_img = self.hist_strech(sharped_img)
+
         edges = self.img_binarized(sharped_img, np.min(sharped_img) + 150)
         cv2.imshow("bin", sharped_img)
 
@@ -201,7 +202,7 @@ class AngleCalculator():
                 right_half_y.append(self.c7_coords[i][1])
 
         # find the top left and right points
-        index = np.where(left_half_y == np.min(left_half_y))[0][0]
+        index = np.where(left_half_x == np.min(left_half_x))[0][0]
         top_left_y = left_half_y[index]
         top_left_x = left_half_x[index]
         index = np.where(right_half_y == np.min(right_half_y))[0][0]
@@ -261,6 +262,7 @@ class AngleCalculator():
             angle_degree = np.degrees(angle)
             print(f"{angle} {angle_degree}")
             
+            cv2.imshow("original", c2_img)
             cv2.imshow("original", c7_img)
             cv2.imshow("c2", c2_edges)
             cv2.imshow("c7", c7_edges)
