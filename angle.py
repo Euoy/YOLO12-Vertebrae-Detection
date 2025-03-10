@@ -2,27 +2,30 @@ import cv2
 import numpy as np
 import pandas
 import math
+from natsort import natsorted
+from pathlib import Path
 
 
-"""
-Data Constants
-"""
-c2_img_path = "E:\\YOLO11-Vertebrae-Detection"
-c7_img_path = "E:\\YOLO11-Vertebrae-Detection"
-original_data_path = "E:\\bone_dataset"
-c2_coords_csv_path = "E:\\YOLO11-Vertebrae-Detection\\results\\c2.csv"
-c7_coords_csv_path = "E:\\YOLO11-Vertebrae-Detection\\results\\c7.csv"
-NUMBER_OF_DATASETS = 16
-"""
-Data Constants
-"""
-    
 class AngleCalculator():
 
-    def __init__(self):
+    def __init__(self, c2_crop_save_path, c7_crop_save_path, c2_coords_csv_path, c7_coords_csv_path, original_data_path):
         """
         Initialization
         """
+
+        self.original_data_path = original_data_path
+        self.c2_img_paths = natsorted(Path(c2_crop_save_path).rglob("*.png"))
+        self.c7_img_paths = natsorted(Path(c7_crop_save_path).rglob("*.png"))
+
+        self.c2_original_img_names = []
+        self.c7_original_img_names = []
+        for img_path in self.c2_img_paths:
+            self.c2_original_img_names.append(img_path.name.split("_c2")[0] + ".png")
+        for img_path in self.c7_img_paths:
+            self.c7_original_img_names.append(img_path.name.split("_c7")[0] + ".png")
+        self.common_img_names = natsorted(self.filter_different_list_value(self.c2_original_img_names, self.c7_original_img_names))
+        map(lambda x: x + self.common_img_names + "_c2.png", self.c2_img_paths)
+        map(lambda x: x + self.common_img_names + "_c7.png", self.c7_img_paths)
 
         self.original_c2_coords = pandas.read_csv(c2_coords_csv_path)
         self.original_c7_coords = pandas.read_csv(c7_coords_csv_path)
@@ -30,8 +33,8 @@ class AngleCalculator():
         self.c2_left_y_factor = [0.8, 0.92]
         self.c2_right_x_factor = [0.2, 0.6]
         self.c2_left_x_factor = [0.1, 0.8]
-        self.c7_right_y_factor = [0.1, 0.3]
-        self.c7_left_y_factor = [0.2, 0.35]
+        self.c7_right_y_factor = [0.12, 0.25]
+        self.c7_left_y_factor = [0.1, 0.4]
         self.c7_right_x_factor = [0, 1]
         self.c7_left_x_factor = [0.1, 1]
 
@@ -42,6 +45,9 @@ class AngleCalculator():
     """
     Function defs
     """
+
+    def filter_different_list_value(self, list1, list2):
+        return list(set(list1) & set(list2))
 
     def get_vetical_vector(self, vector):
         return [vector[1], -vector[0]]
@@ -98,26 +104,27 @@ class AngleCalculator():
     def edge_detection(self, img):
 
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        sharped_img = self.contrast(gray, 100)
+        sharped_img = self.contrast(gray, 120)
         sharped_img = cv2.equalizeHist(sharped_img)
         sharped_img = self.hist_strech(sharped_img)
 
-        edges = self.img_binarized(sharped_img, np.min(sharped_img) + 150)
-        cv2.imshow("bin", sharped_img)
+        edges = self.img_binarized(sharped_img, np.min(sharped_img) + 160)
+        # cv2.imshow("bin", sharped_img)
+        # cv2.waitKey(0)
 
         return edges
 
-    def coords_translate(self, points_to_transfer: list, original_img_number, c):
+    def coords_translate(self, points_to_transfer: list, original_img_name, c):
 
         if c == "c2":
             c2_coords = [
                     [
-                        self.original_c2_coords.loc[self.original_c2_coords["picture_name"] == (f"{original_img_number}.png")].values[0][1],
-                        self.original_c2_coords.loc[self.original_c2_coords["picture_name"] == (f"{original_img_number}.png")].values[0][2]
+                        self.original_c2_coords.loc[self.original_c2_coords["picture_name"] == original_img_name].values[0][1],
+                        self.original_c2_coords.loc[self.original_c2_coords["picture_name"] == original_img_name].values[0][2]
                     ],
                     [
-                        self.original_c2_coords.loc[self.original_c2_coords["picture_name"] == (f"{original_img_number}.png")].values[0][3],
-                        self.original_c2_coords.loc[self.original_c2_coords["picture_name"] == (f"{original_img_number}.png")].values[0][4]
+                        self.original_c2_coords.loc[self.original_c2_coords["picture_name"] == original_img_name].values[0][3],
+                        self.original_c2_coords.loc[self.original_c2_coords["picture_name"] == original_img_name].values[0][4]
                     ]
                 ]
             final_c2_coords = [
@@ -137,12 +144,12 @@ class AngleCalculator():
         elif c == "c7":
             c7_coords = [
                     [
-                        self.original_c7_coords.loc[self.original_c7_coords["picture_name"] == (f"{original_img_number}.png")].values[0][1],
-                        self.original_c7_coords.loc[self.original_c7_coords["picture_name"] == (f"{original_img_number}.png")].values[0][2]
+                        self.original_c7_coords.loc[self.original_c7_coords["picture_name"] == original_img_name].values[0][1],
+                        self.original_c7_coords.loc[self.original_c7_coords["picture_name"] == original_img_name].values[0][2]
                     ],
                     [
-                        self.original_c7_coords.loc[self.original_c7_coords["picture_name"] == (f"{original_img_number}.png")].values[0][3],
-                        self.original_c7_coords.loc[self.original_c7_coords["picture_name"] == (f"{original_img_number}.png")].values[0][4]
+                        self.original_c7_coords.loc[self.original_c7_coords["picture_name"] == original_img_name].values[0][3],
+                        self.original_c7_coords.loc[self.original_c7_coords["picture_name"] == original_img_name].values[0][4]
                     ]
                 ]
             final_c7_coords = [
@@ -217,13 +224,14 @@ class AngleCalculator():
 
     def run(self):
 
+        index = 44
         # Find edges and load images
-        for i in range(NUMBER_OF_DATASETS):
+        for _ in self.common_img_names:
 
-            img_number = i + 1
-            original_img = cv2.imread(f"{original_data_path}\\{img_number}.png")
-            c2_img = cv2.imread(f"{c2_img_path}\\{img_number}_c2.png")
-            c7_img = cv2.imread(f"{c7_img_path}\\{img_number}_c7.png")
+            original_img_name = self.common_img_names[index]
+            original_img = cv2.imread(f"{self.original_data_path}\\{original_img_name}")
+            c2_img = cv2.imread(self.c2_img_paths[index])
+            c7_img = cv2.imread(self.c7_img_paths[index])
             self.c2_img_width = c2_img.shape[1]
             self.c2_img_height = c2_img.shape[0]
             self.c7_img_width = c7_img.shape[1]
@@ -248,8 +256,8 @@ class AngleCalculator():
             cv2.circle(c7_edges, (c7_top_points[0][0], c7_top_points[0][1]), 3, (0, 0, 255), -1)
             cv2.circle(c7_edges, (c7_top_points[1][0], c7_top_points[1][1]), 3, (0, 0, 255), -1)
 
-            final_c2_coords = self.coords_translate(c2_bottom_points, img_number, "c2")
-            final_c7_coords = self.coords_translate(c7_top_points, img_number, "c7")
+            final_c2_coords = self.coords_translate(c2_bottom_points, original_img_name, "c2")
+            final_c7_coords = self.coords_translate(c7_top_points, original_img_name, "c7")
             line_img = self.draw_lines(original_img, final_c2_coords)
             line_img = self.draw_lines(line_img, final_c7_coords)
             
@@ -260,11 +268,12 @@ class AngleCalculator():
 
             angle = self.get_angle(vector1, vector2)
             angle_degree = np.degrees(angle)
-            print(f"{angle} {angle_degree}")
+
+            index += 1
+
+            print(f"{original_img_name}的cobb angle為{angle_degree}度")
             
-            cv2.imshow("original", c2_img)
-            cv2.imshow("original", c7_img)
             cv2.imshow("c2", c2_edges)
             cv2.imshow("c7", c7_edges)
-            cv2.imshow("line", line_img)
+            cv2.imshow(original_img_name, line_img)
             cv2.waitKey(0)
