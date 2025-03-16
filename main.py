@@ -6,9 +6,9 @@ if __name__ == "__main__":
 
     model_path = "E:\\YOLO11-Vertebrae-Detection\\best.pt"
     dataset_path = "E:\\bone_dataset"
-    predict_save_path = "E:\\1"
-    crop_save_path = "E:\\1"
-    csv_save_path = "E:\\1"
+    predict_save_path = "E:\\YOLO11-Vertebrae-Detection\\results\\predicts"
+    crop_save_path = "E:\\YOLO11-Vertebrae-Detection\\results\\crops"
+    csv_save_path = "E:\\YOLO11-Vertebrae-Detection\\results"
 
     # cutter = cutter.Cutter(model_path, dataset_path, predict_save_path, crop_save_path, csv_save_path)
     # cutter.run()

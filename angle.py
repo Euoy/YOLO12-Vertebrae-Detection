@@ -55,7 +55,7 @@ class AngleCalculator():
     def get_angle(self, vector1, vector2):
         return np.arccos(np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2)))
 
-    def img_binarized(self, img, threshold1):
+    def img_binarized(self, img, threshold1, threshold2):
 
         _, binary = cv2.threshold(img, threshold1, 255, cv2.THRESH_BINARY)
 
@@ -107,9 +107,12 @@ class AngleCalculator():
         sharped_img = self.contrast(gray, 120)
         sharped_img = cv2.equalizeHist(sharped_img)
         sharped_img = self.hist_strech(sharped_img)
+        sharped_img = cv2.GaussianBlur(sharped_img, (5, 5), 0)
 
-        edges = self.img_binarized(sharped_img, np.min(sharped_img) + 160)
-        # cv2.imshow("bin", sharped_img)
+        edges = self.img_binarized(sharped_img, np.min(sharped_img) + 140)
+        cv2.imshow("sha", sharped_img)
+        cv2.imshow("bin", edges)
+
         # cv2.waitKey(0)
 
         return edges
@@ -224,7 +227,7 @@ class AngleCalculator():
 
     def run(self):
 
-        index = 44
+        index = 0
         # Find edges and load images
         for _ in self.common_img_names:
 
