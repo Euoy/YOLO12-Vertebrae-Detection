@@ -4,14 +4,18 @@ import pandas
 import math
 from natsort import natsorted
 from pathlib import Path
+import matplotlib.pyplot as plt
+import os
 
+class AngleSVACalculator():
 
-class AngleCalculator():
-
-    def __init__(self, c2_crop_save_path, c7_crop_save_path, c2_coords_csv_path, c7_coords_csv_path, original_data_path):
+    def __init__(self, c2_crop_save_path, c7_crop_save_path, c2_coords_csv_path, c7_coords_csv_path, original_data_path, fig_save_path):
         """
         Initialization
         """
+
+        os.makedirs(fig_save_path, exist_ok=True)
+        self.fig_save_path = fig_save_path
 
         self.original_data_path = original_data_path
         self.c2_img_paths = natsorted(Path(c2_crop_save_path).rglob("*.png"))
@@ -29,13 +33,13 @@ class AngleCalculator():
 
         self.original_c2_coords = pandas.read_csv(c2_coords_csv_path)
         self.original_c7_coords = pandas.read_csv(c7_coords_csv_path)
-        self.c2_right_y_factor = [0.6, 0.865]
-        self.c2_left_y_factor = [0.8, 0.92]
-        self.c2_right_x_factor = [0.2, 0.6]
-        self.c2_left_x_factor = [0.1, 0.8]
-        self.c7_right_y_factor = [0.12, 0.25]
+        self.c2_right_y_factor = [0.6, 0.95]
+        self.c2_left_y_factor = [0.8, 1]
+        self.c2_right_x_factor = [0.1, 0.55]
+        self.c2_left_x_factor = [0.1, 0.5]
+        self.c7_right_y_factor = [0.01, 0.15]
         self.c7_left_y_factor = [0.1, 0.4]
-        self.c7_right_x_factor = [0, 1]
+        self.c7_right_x_factor = [0, 0.9]
         self.c7_left_x_factor = [0.1, 1]
 
         """
@@ -55,7 +59,7 @@ class AngleCalculator():
     def get_angle(self, vector1, vector2):
         return np.arccos(np.dot(vector1, vector2) / (np.linalg.norm(vector1) * np.linalg.norm(vector2)))
 
-    def img_binarized(self, img, threshold1, threshold2):
+    def img_binarized(self, img, threshold1):
 
         _, binary = cv2.threshold(img, threshold1, 255, cv2.THRESH_BINARY)
 
@@ -97,25 +101,36 @@ class AngleCalculator():
         x = np.arange(0, original_img.shape[1])
         y = self.line_eq(x, final_c2_coords[0][0], final_c2_coords[0][1], final_c2_coords[1][0], final_c2_coords[1][1]).astype(np.int32)
         
-        line = cv2.line(original_img, (x[0], y[0]), (x[-1], y[-1]), (0, 0, 255), 2)
+        line = cv2.line(original_img, (x[0], y[0]), (x[-1], y[-1]), (255, 0, 0), 2)
 
         return line
+    
+    def preprocess(self, img):
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        img = self.contrast(img, 10)
+
+        clahe = cv2.createCLAHE(clipLimit=1.0, tileGridSize=(4,4))
+        img = clahe.apply(img)
+
+        img = self.hist_strech(img)
+
+        return img
 
     def edge_detection(self, img):
 
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        sharped_img = self.contrast(gray, 120)
-        sharped_img = cv2.equalizeHist(sharped_img)
-        sharped_img = self.hist_strech(sharped_img)
-        sharped_img = cv2.GaussianBlur(sharped_img, (5, 5), 0)
+        blur = cv2.GaussianBlur(img, (5, 5), 0)
 
-        edges = self.img_binarized(sharped_img, np.min(sharped_img) + 140)
-        cv2.imshow("sha", sharped_img)
-        cv2.imshow("bin", edges)
+        binary = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_MEAN_C,\
+                 cv2.THRESH_BINARY, 11, 2)
+        
+        num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(binary)
+        pixel_num = stats[:, cv2.CC_STAT_AREA]
+        idx = np.where(pixel_num == np.max(pixel_num[1:]))[0]
 
-        # cv2.waitKey(0)
+        lcc = np.zeros(binary.shape, dtype=np.uint8)
+        lcc[labels == idx] = 255
 
-        return edges
+        return lcc
 
     def coords_translate(self, points_to_transfer: list, original_img_name, c):
 
@@ -220,6 +235,16 @@ class AngleCalculator():
         top_right_x = right_half_x[index]
 
         return [[top_left_x, top_left_y], [top_right_x, top_right_y]]
+    
+    def get_c2_center_point(self, original_img_name):
+        return [
+            (self.original_c2_coords.loc[self.original_c2_coords["picture_name"] == original_img_name].values[0][3]) - (self.c2_img_width / 2),
+            (self.original_c2_coords.loc[self.original_c2_coords["picture_name"] == original_img_name].values[0][4]) - (self.c2_img_height / 2)
+        ]
+    
+    def SVA(self, c2_center_point, c7_top_points):
+        
+        return c7_top_points[1][0] - c2_center_point[0]
 
     """
     Function defs
@@ -230,53 +255,96 @@ class AngleCalculator():
         index = 0
         # Find edges and load images
         for _ in self.common_img_names:
+            try:
+                original_img_name = self.common_img_names[index]
+                original_img = cv2.imread(f"{self.original_data_path}\\{original_img_name}")
+                c2_img = cv2.imread(self.c2_img_paths[index])
+                c7_img = cv2.imread(self.c7_img_paths[index])
+                self.c2_img_width = c2_img.shape[1]
+                self.c2_img_height = c2_img.shape[0]
+                self.c7_img_width = c7_img.shape[1]
+                self.c7_img_height = c7_img.shape[0]
 
-            original_img_name = self.common_img_names[index]
-            original_img = cv2.imread(f"{self.original_data_path}\\{original_img_name}")
-            c2_img = cv2.imread(self.c2_img_paths[index])
-            c7_img = cv2.imread(self.c7_img_paths[index])
-            self.c2_img_width = c2_img.shape[1]
-            self.c2_img_height = c2_img.shape[0]
-            self.c7_img_width = c7_img.shape[1]
-            self.c7_img_height = c7_img.shape[0]
+                original_img = cv2.cvtColor(original_img, cv2.COLOR_BGR2RGB)
+                preprocessed_c2_img = self.preprocess(c2_img)
+                preprocessed_c7_img = self.preprocess(c7_img)
+                
+                c2_edges = self.edge_detection(preprocessed_c2_img)
+                c2_indices = np.where(c2_edges != [0])
+                self.c2_coords = np.column_stack((c2_indices[1], c2_indices[0])).tolist()
 
-            c2_edges = self.edge_detection(c2_img)
-            c2_indices = np.where(c2_edges != [0])
-            self.c2_coords = np.column_stack((c2_indices[1], c2_indices[0])).tolist()
+                c7_edges = self.edge_detection(preprocessed_c7_img)
+                c7_indices = np.where(c7_edges != [0])
+                self.c7_coords = np.column_stack((c7_indices[1], c7_indices[0])).tolist()
 
-            c7_edges = self.edge_detection(c7_img)
-            c7_indices = np.where(c7_edges != [0])
-            self.c7_coords = np.column_stack((c7_indices[1], c7_indices[0])).tolist()
+                c2_edges = cv2.cvtColor(c2_edges, cv2.COLOR_GRAY2RGB)
+                c7_edges = cv2.cvtColor(c7_edges, cv2.COLOR_GRAY2RGB)
 
-            c2_edges = cv2.cvtColor(c2_edges, cv2.COLOR_GRAY2BGR)
-            c7_edges = cv2.cvtColor(c7_edges, cv2.COLOR_GRAY2BGR)
+                c2_bottom_points = self.find_c2_bottom_points()
+                c7_top_points = self.find_c7_top_points()
 
-            c2_bottom_points = self.find_c2_bottom_points()
-            c7_top_points = self.find_c7_top_points()
+                cv2.circle(c2_edges, (c2_bottom_points[0][0], c2_bottom_points[0][1]), 3, (255, 0, 0), -1)
+                cv2.circle(c2_edges, (c2_bottom_points[1][0], c2_bottom_points[1][1]), 3, (255, 0, 0), -1)
+                cv2.circle(c7_edges, (c7_top_points[0][0], c7_top_points[0][1]), 3, (255, 0, 0), -1)
+                cv2.circle(c7_edges, (c7_top_points[1][0], c7_top_points[1][1]), 3, (255, 0, 0), -1)
 
-            cv2.circle(c2_edges, (c2_bottom_points[0][0], c2_bottom_points[0][1]), 3, (0, 0, 255), -1)
-            cv2.circle(c2_edges, (c2_bottom_points[1][0], c2_bottom_points[1][1]), 3, (0, 0, 255), -1)
-            cv2.circle(c7_edges, (c7_top_points[0][0], c7_top_points[0][1]), 3, (0, 0, 255), -1)
-            cv2.circle(c7_edges, (c7_top_points[1][0], c7_top_points[1][1]), 3, (0, 0, 255), -1)
+                final_c2_coords = self.coords_translate(c2_bottom_points, original_img_name, "c2")
+                final_c7_coords = self.coords_translate(c7_top_points, original_img_name, "c7")
+                line_img = self.draw_lines(original_img, final_c2_coords)
+                line_img = self.draw_lines(line_img, final_c7_coords)
+                
+                vector1 = np.array(final_c2_coords[0]) - np.array(final_c2_coords[1])
+                vector1 = self.get_vetical_vector(vector1)
+                vector2 = np.array(final_c7_coords[0]) - np.array(final_c7_coords[1])
+                vector2 = self.get_vetical_vector(vector2)
 
-            final_c2_coords = self.coords_translate(c2_bottom_points, original_img_name, "c2")
-            final_c7_coords = self.coords_translate(c7_top_points, original_img_name, "c7")
-            line_img = self.draw_lines(original_img, final_c2_coords)
-            line_img = self.draw_lines(line_img, final_c7_coords)
-            
-            vector1 = np.array(final_c2_coords[0]) - np.array(final_c2_coords[1])
-            vector1 = self.get_vetical_vector(vector1)
-            vector2 = np.array(final_c7_coords[0]) - np.array(final_c7_coords[1])
-            vector2 = self.get_vetical_vector(vector2)
+                angle = self.get_angle(vector1, vector2)
+                angle_degree = np.degrees(angle).round(2)
 
-            angle = self.get_angle(vector1, vector2)
-            angle_degree = np.degrees(angle)
+                index += 1
 
-            index += 1
+                c2_center_point = np.array(self.get_c2_center_point(original_img_name)).astype(int)
+                sva = self.SVA(c2_center_point, final_c7_coords)
 
-            print(f"{original_img_name}的cobb angle為{angle_degree}度")
-            
-            cv2.imshow("c2", c2_edges)
-            cv2.imshow("c7", c7_edges)
-            cv2.imshow(original_img_name, line_img)
-            cv2.waitKey(0)
+                print(f"{original_img_name}的cobb angle為 {angle_degree} 度")
+                print(f"{original_img_name}的SVA為 {sva} pixel")
+
+                # Plot
+                cv2.circle(original_img, (c2_center_point[0], c2_center_point[1]), 3, (255, 0, 0), -1)
+                cv2.line(original_img, (c2_center_point[0], c2_center_point[1]), (c2_center_point[0] + sva, c2_center_point[1]), (0, 0, 255), 2)
+                cv2.line(original_img, (c2_center_point[0] + sva, c2_center_point[1]), (final_c7_coords[1][0], final_c7_coords[1][1]), (0, 255, 0), 2)
+
+                plt.figure(dpi=300)
+                plt.subplot(3, 3, 2)
+                plt.title("c2 original")
+                plt.axis("off")
+                plt.imshow(c2_img)
+                plt.subplot(3, 3, 3)
+                plt.title("c7 original")
+                plt.axis("off")
+                plt.imshow(c7_img,)
+                plt.subplot(3, 3, 5)
+                plt.title("c2 pre-processed")
+                plt.axis("off")
+                plt.imshow(preprocessed_c2_img, cmap="gray")
+                plt.subplot(3, 3, 6)
+                plt.title("c7 pre-processed")
+                plt.axis("off")
+                plt.imshow(preprocessed_c7_img, cmap="gray")
+                plt.subplot(3, 3, 8)
+                plt.title("c2 edges")
+                plt.axis("off")
+                plt.imshow(c2_edges)
+                plt.subplot(3, 3, 9)
+                plt.title("c7 edges")
+                plt.axis("off")
+                plt.imshow(c7_edges)
+                plt.subplot(1, 3, 1)
+                plt.title(f"cobb angle = {angle_degree} degree\n{original_img_name}\nC2 C7 SVA = {sva} pixel")
+                plt.axis("off")
+                plt.imshow(line_img)
+                plt.savefig(f"{self.fig_save_path}\\{original_img_name}")
+                plt.close()
+            except Exception as e:
+                print(e)
+                index += 1
