@@ -171,6 +171,6 @@ cython_debug/
 .pypirc
 
 # Custom
-results
-train_data
-data
+results/
+train_data/
+data/
