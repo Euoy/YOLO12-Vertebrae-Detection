@@ -349,16 +349,16 @@ class AngleSVACalculator():
                     plt.title("c7 edges")
                     plt.axis("off")
                     plt.imshow(c7_edges)
-                    # plt.subplot(1, 3, 1)
-                    # plt.title(f"cobb angle = {angle_degree} degree\n{original_img_name}\nC2 C7 SVA = {sva} pixel")
-                    # plt.axis("off")
-                    # plt.imshow(original_img)
+                    plt.subplot(1, 3, 1)
+                    plt.title(f"cobb angle = {angle_degree} degree\n{original_img_name}\nC2 C7 SVA = {sva} pixel")
+                    plt.axis("off")
+                    plt.imshow(original_img)
                     if self.show_fig:
                         plt.show()
                     plt.savefig(f"{self.result_save_path}\\figs\\{original_img_name}")
                     plt.close()
 
-                    cv2.imwrite(f"{self.result_save_path}\\processed_imgs\\{original_img_name}", original_img)
+                    cv2.imwrite(f"{self.result_save_path}\\processed_imgs\\{original_img_name}", original_img,)
 
                 except Exception as e:
                     print(e)
