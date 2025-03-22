@@ -6,12 +6,14 @@ import datetime
 import shutil
 from ultralytics import YOLO
 import yaml
+import random
+from tqdm import tqdm
+from natsort import natsorted
 
 def kfold_split(dataset_path, yaml_file, ksplit):
     dataset_path = Path(dataset_path)  # replace with 'path/to/dataset' for your custom data
-    labels = sorted(dataset_path.rglob("*labels/*.txt"))  # all data in 'labels'
+    labels = natsorted(dataset_path.rglob("*labels/*.txt"))  # all data in 'labels'
 
-    # your data YAML with data directories and names dictionary
     with open(yaml_file, encoding="utf8") as y:
         classes = yaml.safe_load(y)["names"]
     cls_idx = sorted(classes.keys())
@@ -33,8 +35,8 @@ def kfold_split(dataset_path, yaml_file, ksplit):
 
     labels_df = labels_df.fillna(0.0)  # replace `nan` values with `0.0`
 
+    random.seed(0)  # for reproducibility
     kf = KFold(n_splits=ksplit, shuffle=True, random_state=20)  # setting random_state for repeatable results
-
     kfolds = list(kf.split(labels_df))
 
     folds = [f"split_{n}" for n in range(1, ksplit + 1)]
@@ -44,7 +46,7 @@ def kfold_split(dataset_path, yaml_file, ksplit):
         folds_df[f"split_{i}"].loc[labels_df.iloc[train].index] = "train"
         folds_df[f"split_{i}"].loc[labels_df.iloc[val].index] = "val"
 
-        fold_lbl_distrb = pd.DataFrame(index=folds, columns=cls_idx)
+    fold_lbl_distrb = pd.DataFrame(index=folds, columns=cls_idx)
 
     for n, (train_indices, val_indices) in enumerate(kfolds, start=1):
         train_totals = labels_df.iloc[train_indices].sum()
@@ -54,16 +56,16 @@ def kfold_split(dataset_path, yaml_file, ksplit):
         ratio = val_totals / (train_totals + 1e-7)
         fold_lbl_distrb.loc[f"split_{n}"] = ratio
 
-        supported_extensions = [".jpg", ".jpeg", ".png"]
+    supported_extensions = [".jpg", ".jpeg", ".png"]
 
     # Initialize an empty list to store image file paths
     images = []
 
     # Loop through supported extensions and gather image files
     for ext in supported_extensions:
-        images.extend(sorted((dataset_path / "images").rglob(f"*{ext}")))
+        images.extend(natsorted((dataset_path / "images").rglob(f"*{ext}")))
 
-    # Create the necessary directories and dataset YAML files (unchanged)
+    # Create the necessary directories and dataset YAML files
     save_path = Path(dataset_path / f"{datetime.date.today().isoformat()}_{ksplit}-Fold_Cross-val")
     save_path.mkdir(parents=True, exist_ok=True)
     ds_yamls = []
@@ -84,7 +86,7 @@ def kfold_split(dataset_path, yaml_file, ksplit):
         with open(dataset_yaml, "w") as ds_y:
             yaml.safe_dump(
                 {
-                    "path": str(split_dir),
+                    "path": split_dir.as_posix(),
                     "train": "train",
                     "val": "val",
                     "names": classes,
@@ -92,22 +94,27 @@ def kfold_split(dataset_path, yaml_file, ksplit):
                 ds_y,
             )
 
-    for image, label in zip(images, labels):
+    for image in tqdm(images, total=len(images), desc="Copying files"):
         for split, k_split in folds_df.loc[image.stem].items():
-
             # Destination directory
             img_to_path = save_path / split / k_split / "images"
             lbl_to_path = save_path / split / k_split / "labels"
+            label_name = (f"{image.stem}.txt")
+            label = str(image).replace("images", "labels")
+            label = label.split(".")[0] + ".txt"
 
             # Copy image and label files to new directory (SamefileError if file already exists)
             shutil.copy(image, img_to_path / image.name)
-            shutil.copy(label, lbl_to_path / label.name)
+            shutil.copy(label, lbl_to_path / label_name)
+
+    folds_df.to_csv(save_path / "kfold_datasplit.csv")
+    fold_lbl_distrb.to_csv(save_path / "kfold_label_distribution.csv")
 
     return ds_yamls
 
 if __name__ == "__main__":
     weights_path = "E:\\YOLO11-Vertebrae-Detection\\yolo11s.pt"
-    model = YOLO(weights_path, task="detect")
+    model = YOLO(weights_path)
 
     results = {}
     ksplit = 5
@@ -116,13 +123,10 @@ if __name__ == "__main__":
     dataset_yaml = Path("E:\\YOLO11-Vertebrae-Detection\\kfold_train_config.yaml")
     kfolds_yaml = kfold_split(dataset_path, dataset_yaml, ksplit)
 
-    # Define your additional arguments here
     batch = 16
     epochs = 500
 
     for k in range(ksplit):
-        print(kfolds_yaml[k])
         dataset_yaml = kfolds_yaml[k]
-        model = YOLO(weights_path, task="detect")
-        model.train(data=dataset_yaml, epochs=epochs, batch=batch, imgsz = 640)  # include any train arguments
-        results[k] = model.metrics  # save output metrics for further analysis
+        model.train(data=dataset_yaml, epochs=epochs, batch=batch, imgsz = 640, project="/")
+        results[k] = model.metrics
