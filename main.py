@@ -9,7 +9,7 @@ if __name__ == "__main__":
         with open ("paths.yaml", encoding="utf8") as y:
             paths = yaml.safe_load(y)
     except FileNotFoundError:
-        print("paths.yaml not found!")
+        print("paths.yaml not found! Please put paths.yaml in the same directory as the .exe file")
         input("Press any key to exit...")
         exit()
     
