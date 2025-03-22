@@ -119,8 +119,9 @@ if __name__ == "__main__":
     results = {}
     ksplit = 5
 
-    dataset_path = Path("E:\\YOLO11-Vertebrae-Detection\\train_data\\total")
+    dataset_path = Path("E:\\YOLO11-Vertebrae-Detection\\new_data")
     dataset_yaml = Path("E:\\YOLO11-Vertebrae-Detection\\kfold_train_config.yaml")
+    project = f"{Path().absolute()}\\runs"
     kfolds_yaml = kfold_split(dataset_path, dataset_yaml, ksplit)
 
     batch = 16
@@ -128,5 +129,5 @@ if __name__ == "__main__":
 
     for k in range(ksplit):
         dataset_yaml = kfolds_yaml[k]
-        model.train(data=dataset_yaml, epochs=epochs, batch=batch, imgsz = 640, project="/")
+        model.train(data=dataset_yaml, epochs=epochs, batch=batch, imgsz = 640, project=project)
         results[k] = model.metrics

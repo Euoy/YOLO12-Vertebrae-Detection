@@ -174,3 +174,4 @@ cython_debug/
 results/
 train_data/
 data/
+new_data/
