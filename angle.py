@@ -114,7 +114,7 @@ class AngleSVACalculator():
         
         cv2.line(img, (x[0], y[0]), (x[-1], y[-1]), (255, 0, 0), 2)
     
-    def preprocess(self, img):
+    def img_enhance(self, img):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         img = self.contrast(img, 30)
 
@@ -140,7 +140,7 @@ class AngleSVACalculator():
         lcc = np.zeros(binary.shape, dtype=np.uint8)
         lcc[labels == idx] = 255
 
-        return lcc, binary
+        return lcc
 
     def coords_translate(self, points_to_transfer: list, original_img_name, c):
 
@@ -278,15 +278,15 @@ class AngleSVACalculator():
                     
                     # pre-processes
                     original_img = cv2.cvtColor(original_img, cv2.COLOR_BGR2RGB)
-                    preprocessed_c2_img = self.preprocess(c2_img)
-                    preprocessed_c7_img = self.preprocess(c7_img)
+                    enhanced_c2_img = self.img_enhance(c2_img)
+                    enhanced_c7_img = self.img_enhance(c7_img)
                     
                     # find edges
-                    c2_edges, c2_binary = self.edge_detection(preprocessed_c2_img)
+                    c2_edges = self.edge_detection(enhanced_c2_img)
                     c2_indices = np.where(c2_edges != [0])
                     self.c2_coords = np.column_stack((c2_indices[1], c2_indices[0])).tolist()
 
-                    c7_edges, c7_binary = self.edge_detection(preprocessed_c7_img)
+                    c7_edges = self.edge_detection(enhanced_c7_img)
                     c7_indices = np.where(c7_edges != [0])
                     self.c7_coords = np.column_stack((c7_indices[1], c7_indices[0])).tolist()
 
@@ -334,13 +334,13 @@ class AngleSVACalculator():
                     plt.axis("off")
                     plt.imshow(c7_img,)
                     plt.subplot(3, 3, 5)
-                    plt.title("c2 binarized")
+                    plt.title("c2 image enhanced")
                     plt.axis("off")
-                    plt.imshow(c2_binary, cmap="gray")
+                    plt.imshow(enhanced_c2_img, cmap="gray")
                     plt.subplot(3, 3, 6)
-                    plt.title("c7 binarized")
+                    plt.title("c7 image enhanced")
                     plt.axis("off")
-                    plt.imshow(c7_binary, cmap="gray")
+                    plt.imshow(enhanced_c7_img, cmap="gray")
                     plt.subplot(3, 3, 8)
                     plt.title("c2 edges")
                     plt.axis("off")
