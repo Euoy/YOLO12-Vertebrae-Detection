@@ -276,7 +276,7 @@ class AngleSVACalculator():
                     self.c7_img_width = c7_img.shape[1]
                     self.c7_img_height = c7_img.shape[0]
                     
-                    # pre-processes
+                    # image enhancement
                     original_img = cv2.cvtColor(original_img, cv2.COLOR_BGR2RGB)
                     enhanced_c2_img = self.img_enhance(c2_img)
                     enhanced_c7_img = self.img_enhance(c7_img)
@@ -361,6 +361,7 @@ class AngleSVACalculator():
                     cv2.imwrite(f"{self.result_save_path}\\processed_imgs\\{original_img_name}", original_img,)
 
                 except Exception as e:
+                    print("Error on image: ", original_img_name)
                     print(e)
                 
                 index += 1

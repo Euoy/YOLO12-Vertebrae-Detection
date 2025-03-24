@@ -39,11 +39,11 @@ class Cutter():
         self.columns = ["picture_name", "x1", "y1", "x2", "y2", "confidence"]
 
         #初始化二維陣列(因為轉csv時的陣列大小要相同)(6x500)
-        self.x1s = [[None] * len(self.img_names)] * 6
-        self.y1s = [[None] * len(self.img_names)] * 6
-        self.x2s = [[None] * len(self.img_names)] * 6
-        self.y2s = [[None] * len(self.img_names)] * 6
-        self.confidences = [[None] * len(self.img_names)] * 6
+        self.x1s = [[None] * len(self.img_names) for _ in range(6)]
+        self.y1s = [[None] * len(self.img_names) for _ in range(6)]
+        self.x2s = [[None] * len(self.img_names) for _ in range(6)]
+        self.y2s = [[None] * len(self.img_names) for _ in range(6)]
+        self.confidences = [[None] * len(self.img_names) for _ in range(6)]
 
         """
         初始化變數
@@ -86,7 +86,7 @@ class Cutter():
         with alive_progress.alive_bar(self.img_names.__len__(), title="Cutting...") as bar:
             for img_name in self.img_names:
                 img = self.imgs[img_number]
-                result = self.model(img, verbose=False)[0]
+                result = self.model(img, verbose=False, conf=0.5)[0]
 
                 #儲存預測結果
                 result.save(f"{self.result_save_path}\\predicts\\{img_name}")
@@ -96,9 +96,6 @@ class Cutter():
                     bone_id = int(box.cls.item())
                     bone_name = self.model.names[bone_id]
                     confidence = box.conf.item()
-                    #如果可信度小於0.5就跳過
-                    if(confidence < 0.5):
-                        continue
                     
                     x1 = box.xyxy[0][0].item()
                     y1 = box.xyxy[0][1].item()

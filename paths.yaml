@@ -1,3 +1,3 @@
-model_path: E:\\YOLO11-Vertebrae-Detection\\best.pt
-vertebra_path: E:\\bone_dataset
-results_path: E:\\YOLO11-Vertebrae-Detection\\results
+model_path: E:\YOLO12-Vertebrae-Detection\best.pt
+vertebra_path: E:\bone_dataset
+results_path: E:\YOLO12-Vertebrae-Detection\results
