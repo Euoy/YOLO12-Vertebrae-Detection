@@ -323,7 +323,6 @@ class AngleSVACalculator():
                     cv2.putText(original_img, f"{sva} pixel", (c2_center_point[0] + 10, c2_center_point[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, color=(0, 0, 255), fontScale=0.7, thickness=2)
                     cv2.putText(original_img, f"cobb angle: {angle_degree} degree", (final_c2_coords[0][0] + 50, final_c2_coords[0][1] + 20), cv2.FONT_HERSHEY_SIMPLEX, color=(255, 0, 0), fontScale=0.7, thickness=2)
 
-
                     plt.figure(dpi=300)
                     plt.subplot(3, 3, 2)
                     plt.title("c2 original")
@@ -350,7 +349,7 @@ class AngleSVACalculator():
                     plt.axis("off")
                     plt.imshow(c7_edges)
                     plt.subplot(1, 3, 1)
-                    plt.title(f"cobb angle = {angle_degree} degree\n{original_img_name}\nC2 C7 SVA = {sva} pixel")
+                    plt.title(f"cobb angle = {angle_degree} degree\nC2 C7 SVA = {sva} pixel\n{original_img_name}")
                     plt.axis("off")
                     plt.imshow(original_img)
                     if self.show_fig:
