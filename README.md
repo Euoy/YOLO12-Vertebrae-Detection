@@ -4,4 +4,6 @@ Based on YOLOv12
 
 #如何使用
 首先先將原始碼下載，可以直接從github上下載或是使用指令：  
-    git clone
+'''
+git clone https://github.com/Euoy/YOLO12-Vertebrae-Detection
+'''
