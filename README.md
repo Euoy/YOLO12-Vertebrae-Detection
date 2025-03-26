@@ -5,9 +5,9 @@
 | 平台 | 版本 |
 | --- | --- |
 | Python| 3.12.3 |
-| GPU | RTX3070 |
+| GPU | RTX3070 8GB |
 | CPU | AMD R5 7600 |
-| RAM | DDR5 32G |
+| RAM | DDR5 32GB |
 
 # 如何使用
 
