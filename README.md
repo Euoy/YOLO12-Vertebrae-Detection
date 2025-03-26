@@ -25,7 +25,7 @@ pip install -r requirements.txt
 
 4. 在此repo中的Release下載訓練好的YOLO模型
 
-5. 將path.yaml內路徑更改為自己設定的路徑
+5. 將`path.yaml`內路徑更改為自己設定的路徑
 
 6. 執行以下指令並根據需要選擇模式即可：
 ```
