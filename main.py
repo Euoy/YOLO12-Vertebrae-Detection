@@ -1,5 +1,5 @@
-import angle
-import cutter
+import src.angle as angle
+import src.cutter as cutter
 import yaml
 import os
 
@@ -14,12 +14,23 @@ if __name__ == "__main__":
         input("Press any key to exit...")
         exit()
     
-    model_path = paths["model_path"]
-    vertebra_path = paths["vertebra_path"]
-    results_path = paths["results_path"]
-
-    if not os.path.exists(model_path) or not os.path.exists(vertebra_path):
-        print("Model or Vertebra images not found!")
+    try:
+        model_path = paths["model_path"]
+        vertebra_path = paths["vertebra_path"]
+        results_path = paths["results_path"]
+    except KeyError:
+        print("paths header not found!")
+    
+    if model_path == None or vertebra_path == None or results_path == None:
+        print("paths.yaml error, please ensure you have fill the paths")
+        input("Press any key to exit...")
+        exit()
+    elif not os.path.exists(model_path) or not model_path.endswith(".pt"):
+        print("Model not found!")
+        input("Press any key to exit...")
+        exit()
+    elif not os.path.exists(vertebra_path):
+        print("Images not found!")
         input("Press any key to exit...")
         exit()
 
