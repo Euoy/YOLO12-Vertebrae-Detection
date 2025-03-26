@@ -1,12 +1,14 @@
-頸椎骨節標記定位以及Cobb Angle SVA 計算
-Based on YOLOv12  
+# 頸椎骨節標記定位以及Cobb Angle SVA 計算
+> Based on YOLOv12  
 (輸出和訓練圖集並沒有在此repo內)
 
 已測試使用之環境：  
 | 平台 | 版本 |
 | --- | --- |
 | Python| 3.12.3 |
-
+| GPU | RTX3070 |
+| CPU | AMD R5 7600 |
+| RAM | DDR5 32G |
 
 # 如何使用
 
