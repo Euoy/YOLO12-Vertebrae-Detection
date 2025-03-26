@@ -2,8 +2,25 @@
 Based on YOLOv12  
 (輸出和訓練圖集並沒有在此repo內)
 
-#如何使用
-首先先將原始碼下載，可以直接從github上下載或是使用指令：  
+測試Python版本為3.12.3
+
+# 如何使用
+
+1. 首先先將原始碼下載，可以直接從github上下載或是使用指令：  
 ```
 git clone https://github.com/Euoy/YOLO12-Vertebrae-Detection
+```
+
+2. 在原始碼資料夾底下運行以下指令安裝依賴：
+```
+pip install -r requirements.txt
+```
+
+4. 在此repo中的Release下載訓練好的YOLO模型
+
+5. 將path.yaml內路徑更改為自己設定的路徑
+
+6. 執行以下指令並根據需要選擇模式即可：
+```
+python main.py
 ```
