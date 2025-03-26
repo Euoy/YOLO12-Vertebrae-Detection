@@ -11,9 +11,9 @@
 
 # 如何使用
 
-1. 安裝Python（建議使用3.12.3）
+1. 安裝Python（建議使用3.12）
 
-2. 首先先將原始碼下載，可以直接從github上下載或是使用指令：  
+2. 首先先將原始碼下載，可以直接從Github上下載，若有安裝Git使用指令：  
 ```
 git clone https://github.com/Euoy/YOLO12-Vertebrae-Detection
 ```
