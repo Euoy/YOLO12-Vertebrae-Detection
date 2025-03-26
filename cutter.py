@@ -83,7 +83,7 @@ class Cutter():
     def run(self):
         #因為要取得所預測圖片的檔名進行分類，所以使用迴圈一張一張預測
         img_number = 0
-        with alive_progress.alive_bar(self.img_names.__len__(), title="Cutting...") as bar:
+        with alive_progress.alive_bar(self.img_names.__len__(), title="Predicting...") as bar:
             for img_name in self.img_names:
                 img = self.imgs[img_number]
                 result = self.model(img, verbose=False, conf=0.5)[0]
