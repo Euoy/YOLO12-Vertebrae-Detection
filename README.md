@@ -11,6 +11,8 @@
 
 # 如何使用
 
+## 從頭構建
+
 1. 安裝Python（建議使用3.12）
 
 2. 首先先將原始碼下載，可以直接從Github上下載，若有安裝Git使用指令：  
@@ -31,3 +33,6 @@ pip install -r requirements.txt
 ```
 python main.py
 ```
+
+## 使用打包好的
+若不想從頭構建，也可直接下載使用打包完成的：[Dropbox下載](https://www.dropbox.com/scl/fi/mh4necnliyfgngt9s1ldc/Vertebrae_Helper.zip?rlkey=rm9jl63hnlix73a46gea9v5tc&st=eantxu59&dl=0)
