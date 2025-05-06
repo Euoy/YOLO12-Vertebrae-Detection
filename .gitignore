@@ -174,3 +174,4 @@ cython_debug/
 results/
 train_data/
 *.pt
+icon.ico
