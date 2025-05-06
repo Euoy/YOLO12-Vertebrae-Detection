@@ -35,4 +35,4 @@ python main.py
 ```
 
 ## 使用打包好的
-若不想從頭構建，也可直接下載使用打包完成的：[Dropbox下載](https://www.dropbox.com/scl/fi/mh4necnliyfgngt9s1ldc/Vertebrae_Helper.zip?rlkey=rm9jl63hnlix73a46gea9v5tc&st=eantxu59&dl=0)
+若不想從頭構建，也可直接下載使用打包完成的：[GoogleDrive下載](https://drive.google.com/file/d/1zyywZB0etjiZTN4MTeIQF8OEb1dH1X3D/view?usp=drive_link)
