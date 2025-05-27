@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-import pandas
+import pandas as pd
 import math
 from natsort import natsorted
 from pathlib import Path
@@ -40,16 +40,17 @@ class AngleSVACalculator():
         self.c7_img_paths = (list)(map(lambda x: f"{result_save_path}\\crops\\c7\\" + x.split(".")[0] + "_c7." + x.split(".")[-1], self.common_img_names))
 
         # Reading CSV
-        self.original_c2_coords = pandas.read_csv(f"{result_save_path}\\c2.csv")
-        self.original_c7_coords = pandas.read_csv(f"{result_save_path}\\c7.csv")
+        self.original_c2_coords = pd.read_csv(f"{result_save_path}\\c2.csv")
+        self.original_c7_coords = pd.read_csv(f"{result_save_path}\\c7.csv")
+
         self.c2_right_y_factor = [0.6, 0.95]
         self.c2_left_y_factor = [0.8, 1]
         self.c2_right_x_factor = [0.1, 0.55]
-        self.c2_left_x_factor = [0.1, 0.5]
-        self.c7_right_y_factor = [0.01, 0.15]
-        self.c7_left_y_factor = [0.1, 0.4]
-        self.c7_right_x_factor = [0.2, 0.9]
-        self.c7_left_x_factor = [0.1, 1]
+        self.c2_left_x_factor = [0.2, 0.5]
+        self.c7_right_y_factor = [0.4, 0.65]
+        self.c7_left_y_factor = [0.82, 0.97]
+        self.c7_right_x_factor = [0.75, 0.85]
+        self.c7_left_x_factor = [0.5, 0.7]
 
         self.show_fig = show_fig
 
@@ -146,67 +147,56 @@ class AngleSVACalculator():
 
         if c == "c2":
             c2_coords = [
-                    [
-                        self.original_c2_coords.loc[self.original_c2_coords["picture_name"] == original_img_name].values[0][1],
-                        self.original_c2_coords.loc[self.original_c2_coords["picture_name"] == original_img_name].values[0][2]
-                    ],
-                    [
-                        self.original_c2_coords.loc[self.original_c2_coords["picture_name"] == original_img_name].values[0][3],
-                        self.original_c2_coords.loc[self.original_c2_coords["picture_name"] == original_img_name].values[0][4]
+                    self.original_c2_coords.loc[self.original_c2_coords["picture_name"] == original_img_name].values[0][1],
+                    self.original_c2_coords.loc[self.original_c2_coords["picture_name"] == original_img_name].values[0][2]
                     ]
-                ]
             final_c2_coords = [
-                [
-                    c2_coords[0][0] + points_to_transfer[0][0],
-                    c2_coords[0][1] + points_to_transfer[0][1]
-                ],
-                [
-                    c2_coords[1][0] - (self.c2_img_width - points_to_transfer[1][0]),
-                    c2_coords[1][1] - (self.c2_img_height - points_to_transfer[1][1])
+                    c2_coords[0] + points_to_transfer[0],
+                    c2_coords[1] + points_to_transfer[1]
                 ]
-            ]
             final_c2_coords = np.int32(final_c2_coords)
             
             return final_c2_coords
 
         elif c == "c7":
             c7_coords = [
-                    [
-                        self.original_c7_coords.loc[self.original_c7_coords["picture_name"] == original_img_name].values[0][1],
-                        self.original_c7_coords.loc[self.original_c7_coords["picture_name"] == original_img_name].values[0][2]
-                    ],
-                    [
-                        self.original_c7_coords.loc[self.original_c7_coords["picture_name"] == original_img_name].values[0][3],
-                        self.original_c7_coords.loc[self.original_c7_coords["picture_name"] == original_img_name].values[0][4]
-                    ]
+                    self.original_c7_coords.loc[self.original_c7_coords["picture_name"] == original_img_name].values[0][1],
+                    self.original_c7_coords.loc[self.original_c7_coords["picture_name"] == original_img_name].values[0][2]
                 ]
             final_c7_coords = [
-                [
-                    c7_coords[0][0] + points_to_transfer[0][0],
-                    c7_coords[0][1] + points_to_transfer[0][1]
-                ],
-                [
-                    c7_coords[1][0] - (self.c7_img_width - points_to_transfer[1][0]),
-                    c7_coords[1][1] - (self.c7_img_height - points_to_transfer[1][1])
+                c7_coords[0] + points_to_transfer[0],
+                c7_coords[1] + points_to_transfer[1]
                 ]
-            ]
             final_c7_coords = np.int32(final_c7_coords)
             
             return final_c7_coords
 
-    def find_c2_bottom_points(self) -> list:
+    def find_c2_bottom_points(self, reversed=False) -> list:
 
         left_half_x = []
         left_half_y = []
         right_half_x = []
         right_half_y = []
 
+        
+        if reversed:
+            c2_left_y_factor = self.c2_right_y_factor
+            c2_right_y_factor = self.c2_left_y_factor
+            c2_left_x_factor = [1 - self.c2_right_x_factor[1], 1 - self.c2_right_x_factor[0]]
+            c2_right_x_factor = [1 - self.c2_left_x_factor[1], 1 - self.c2_left_x_factor[0]]
+        else:
+            c2_left_y_factor = self.c2_left_y_factor
+            c2_right_y_factor = self.c2_right_y_factor
+            c2_left_x_factor = self.c2_left_x_factor
+            c2_right_x_factor = self.c2_right_x_factor
+
+
         # split the points of edges to left half and right half
         for i in range(len(self.c2_coords)):
-            if (self.isbetween(self.c2_coords[i][0], (self.c2_img_width / 2) * self.c2_left_x_factor[0], (self.c2_img_width / 2) * self.c2_left_x_factor[1]) and self.isbetween(self.c2_coords[i][1], self.c2_img_height * self.c2_left_y_factor[0], self.c2_img_height * self.c2_left_y_factor[1])):
+            if (self.isbetween(self.c2_coords[i][0], (self.c2_img_width / 2) * c2_left_x_factor[0], (self.c2_img_width / 2) * c2_left_x_factor[1]) and self.isbetween(self.c2_coords[i][1], self.c2_img_height * c2_left_y_factor[0], self.c2_img_height * c2_left_y_factor[1])):
                 left_half_x.append(self.c2_coords[i][0])
                 left_half_y.append(self.c2_coords[i][1])
-            elif (self.isbetween(self.c2_coords[i][0], (self.c2_img_width / 2) * (1 + self.c2_right_x_factor[0]), (self.c2_img_width / 2) * (1 + self.c2_right_x_factor[1])) and self.isbetween(self.c2_coords[i][1], self.c2_img_height * self.c2_right_y_factor[0], self.c2_img_height * self.c2_right_y_factor[1])):
+            elif (self.isbetween(self.c2_coords[i][0], (self.c2_img_width / 2) * (1 + c2_right_x_factor[0]), (self.c2_img_width / 2) * (1 + c2_right_x_factor[1])) and self.isbetween(self.c2_coords[i][1], self.c2_img_height * c2_right_y_factor[0], self.c2_img_height * c2_right_y_factor[1])):
                 right_half_x.append(self.c2_coords[i][0])
                 right_half_y.append(self.c2_coords[i][1])
 
@@ -220,31 +210,62 @@ class AngleSVACalculator():
 
         return [[bottom_left_x, bottom_left_y], [bottom_right_x, bottom_right_y]]
 
-    def find_c7_top_points(self) -> list:
+    def find_c7_bottom_points(self, reversed=False) -> list:
 
         left_half_x = []
         left_half_y = []
         right_half_x = []
         right_half_y = []
+        sva_x = []
+        sva_y = []
+
+        sva_y_factor = [0.01, 0.15]
+        if reversed:
+            c7_left_y_factor = self.c7_right_y_factor
+            c7_right_y_factor = self.c7_left_y_factor
+            c7_left_x_factor = [1 - self.c7_right_x_factor[1], 1 - self.c7_right_x_factor[0]]
+            c7_right_x_factor = [1 - self.c7_left_x_factor[1], 1 - self.c7_left_x_factor[0]]
+            sva_x_factor = [0.1, 0.8]
+        else:
+            c7_left_y_factor = self.c7_left_y_factor
+            c7_right_y_factor = self.c7_right_y_factor
+            c7_left_x_factor = self.c7_left_x_factor
+            c7_right_x_factor = self.c7_right_x_factor
+            sva_x_factor = [0.2, 0.9]
 
         # split the points of edges to left half and right half
         for i in range(len(self.c7_coords)):
-            if (self.isbetween(self.c7_coords[i][0], (self.c7_img_width / 2) * self.c7_left_x_factor[0], (self.c7_img_width / 2) * self.c7_left_x_factor[1]) and self.isbetween(self.c7_coords[i][1], self.c7_img_height * self.c7_left_y_factor[0], self.c7_img_height * self.c7_left_y_factor[1])):
+            if (self.isbetween(self.c7_coords[i][0], (self.c7_img_width / 2) * c7_left_x_factor[0], (self.c7_img_width / 2) * c7_left_x_factor[1]) and self.isbetween(self.c7_coords[i][1], self.c7_img_height * c7_left_y_factor[0], self.c7_img_height * c7_left_y_factor[1])):
                 left_half_x.append(self.c7_coords[i][0])
                 left_half_y.append(self.c7_coords[i][1])
-            elif (self.isbetween(self.c7_coords[i][0], (self.c7_img_width / 2) * (1 + self.c7_right_x_factor[0]), (self.c7_img_width / 2) * (1 + self.c7_right_x_factor[1])) and self.isbetween(self.c7_coords[i][1], self.c7_img_height * self.c7_right_y_factor[0], self.c7_img_height * self.c7_right_y_factor[1])):
+            elif (self.isbetween(self.c7_coords[i][0], (self.c7_img_width / 2) * (1 + c7_right_x_factor[0]), (self.c7_img_width / 2) * (1 + c7_right_x_factor[1])) and self.isbetween(self.c7_coords[i][1], self.c7_img_height * c7_right_y_factor[0], self.c7_img_height * c7_right_y_factor[1])):
                 right_half_x.append(self.c7_coords[i][0])
                 right_half_y.append(self.c7_coords[i][1])
+            
+            if reversed:
+                if (self.isbetween(self.c7_coords[i][0], (self.c7_img_width / 2) * sva_x_factor[0], (self.c7_img_width / 2) * sva_x_factor[1]) and self.isbetween(self.c7_coords[i][1], self.c7_img_height * sva_y_factor[0], self.c7_img_height * sva_y_factor[1])):
+                    sva_x.append(self.c7_coords[i][0])
+                    sva_y.append(self.c7_coords[i][1])
+            else:
+                if (self.isbetween(self.c7_coords[i][0], (self.c7_img_width / 2) * (1 + sva_x_factor[0]), (self.c7_img_width / 2) * (1 + sva_x_factor[1])) and self.isbetween(self.c7_coords[i][1], self.c7_img_height * sva_y_factor[0], self.c7_img_height * sva_y_factor[1])):
+                    sva_x.append(self.c7_coords[i][0])
+                    sva_y.append(self.c7_coords[i][1])
 
         # find the top left and right points
-        index = np.where(left_half_x == np.min(left_half_x))[0][-1]
+        index = np.where(left_half_y == np.max(left_half_y))[0][-1]
         top_left_y = left_half_y[index]
         top_left_x = left_half_x[index]
-        index = np.where(right_half_y == np.min(right_half_y))[0][0]
+        index = np.where(right_half_y == np.max(right_half_y))[0][0]
         top_right_y = right_half_y[index]
         top_right_x = right_half_x[index]
+        if reversed:
+            index = np.where(sva_y == np.min(sva_y))[0][-1]
+        else:
+            index = np.where(sva_y == np.min(sva_y))[0][0]
+        right_top_y = sva_y[index]
+        right_top_x = sva_x[index]
 
-        return [[top_left_x, top_left_y], [top_right_x, top_right_y]]
+        return [[top_left_x, top_left_y], [top_right_x, top_right_y]], [right_top_x, right_top_y]
     
     def get_c2_center_point(self, original_img_name):
         return [
@@ -252,9 +273,18 @@ class AngleSVACalculator():
             (self.original_c2_coords.loc[self.original_c2_coords["picture_name"] == original_img_name].values[0][4]) - (self.c2_img_height / 2)
         ]
     
-    def SVA(self, c2_center_point, c7_top_points):
+    def SVA(self, c2_center_point, sva_point, reversed=False):
         
-        return c7_top_points[1][0] - c2_center_point[0]
+        if reversed:
+            return c2_center_point[0] - sva_point[0]
+        else:
+            return sva_point[0] - c2_center_point[0]
+        
+    def reversed_check(self, img_name):
+        c2_coord_x = self.original_c2_coords.loc[self.original_c2_coords["picture_name"] == img_name].values[0][1]
+        c7_coord_x = self.original_c7_coords.loc[self.original_c7_coords["picture_name"] == img_name].values[0][1]
+        return c2_coord_x > c7_coord_x
+        
 
     """
     Function defs
@@ -275,6 +305,8 @@ class AngleSVACalculator():
                     self.c2_img_height = c2_img.shape[0]
                     self.c7_img_width = c7_img.shape[1]
                     self.c7_img_height = c7_img.shape[0]
+
+                    reversed = self.reversed_check(original_img_name)
                     
                     # image enhancement
                     original_img = cv2.cvtColor(original_img, cv2.COLOR_BGR2RGB)
@@ -291,10 +323,11 @@ class AngleSVACalculator():
                     self.c7_coords = np.column_stack((c7_indices[1], c7_indices[0])).tolist()
 
                     # find c2 and c7 points
-                    c2_bottom_points = self.find_c2_bottom_points()
-                    c7_top_points = self.find_c7_top_points()
-                    final_c2_coords = self.coords_translate(c2_bottom_points, original_img_name, "c2")
-                    final_c7_coords = self.coords_translate(c7_top_points, original_img_name, "c7")
+                    c2_bottom_points = self.find_c2_bottom_points(reversed)
+                    c7_bottom_points, c7_right_top_point = self.find_c7_bottom_points(reversed)
+                    final_c2_coords = [self.coords_translate(c2_bottom_points[0], original_img_name, "c2"), self.coords_translate(c2_bottom_points[1], original_img_name, "c2")]
+                    final_c7_coords = [self.coords_translate(c7_bottom_points[0], original_img_name, "c7"), self.coords_translate(c7_bottom_points[1], original_img_name, "c7")]
+                    final_sva_point = self.coords_translate(c7_right_top_point, original_img_name, "c7")
                     
                     # calculate angle
                     vector1 = np.array(final_c2_coords[0]) - np.array(final_c2_coords[1])
@@ -303,7 +336,7 @@ class AngleSVACalculator():
                     angle_degree = np.degrees(angle).round(2)
 
                     c2_center_point = np.array(self.get_c2_center_point(original_img_name)).astype(int)
-                    sva = self.SVA(c2_center_point, final_c7_coords)
+                    sva = self.SVA(c2_center_point, final_sva_point, reversed)
 
                     # print(f"{original_img_name}的cobb angle為 {angle_degree} 度")
                     # print(f"{original_img_name}的SVA為 {sva} pixel")
@@ -313,15 +346,24 @@ class AngleSVACalculator():
                     c7_edges = cv2.cvtColor(c7_edges, cv2.COLOR_GRAY2RGB)
                     cv2.circle(c2_edges, (c2_bottom_points[0][0], c2_bottom_points[0][1]), 3, (255, 0, 0), -1)
                     cv2.circle(c2_edges, (c2_bottom_points[1][0], c2_bottom_points[1][1]), 3, (255, 0, 0), -1)
-                    cv2.circle(c7_edges, (c7_top_points[0][0], c7_top_points[0][1]), 3, (255, 0, 0), -1)
-                    cv2.circle(c7_edges, (c7_top_points[1][0], c7_top_points[1][1]), 3, (255, 0, 0), -1)
+                    cv2.circle(c7_edges, (c7_bottom_points[0][0], c7_bottom_points[0][1]), 3, (255, 0, 0), -1)
+                    cv2.circle(c7_edges, (c7_bottom_points[1][0], c7_bottom_points[1][1]), 3, (255, 0, 0), -1)
+                    cv2.circle(c7_edges, (c7_right_top_point[0], c7_right_top_point[1]), 3, (0, 0, 255), -1)
+
+                    # cobb angle
                     self.draw_long_line(original_img, final_c2_coords)
                     self.draw_long_line(original_img, final_c7_coords)
+                    # SVA
+                    if reversed:
+                        cv2.line(original_img, (c2_center_point[0], c2_center_point[1]), (c2_center_point[0] - sva, c2_center_point[1]), (0, 0, 255), 2)
+                        cv2.line(original_img, (c2_center_point[0] - sva, c2_center_point[1]), (final_sva_point[0], final_sva_point[1]), (0, 255, 0), 2)
+                        
+                    else:
+                        cv2.line(original_img, (c2_center_point[0], c2_center_point[1]), (c2_center_point[0] + sva, c2_center_point[1]), (0, 0, 255), 2)
+                        cv2.line(original_img, (c2_center_point[0] + sva, c2_center_point[1]), (final_sva_point[0], final_sva_point[1]), (0, 255, 0), 2)
                     cv2.circle(original_img, (c2_center_point[0], c2_center_point[1]), 3, (255, 0, 0), -1)
-                    cv2.line(original_img, (c2_center_point[0], c2_center_point[1]), (c2_center_point[0] + sva, c2_center_point[1]), (0, 0, 255), 2)
-                    cv2.line(original_img, (c2_center_point[0] + sva, c2_center_point[1]), (final_c7_coords[1][0], final_c7_coords[1][1]), (0, 255, 0), 2)
-                    cv2.putText(original_img, f"{sva} pixel", (c2_center_point[0] + 10, c2_center_point[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, color=(0, 0, 255), fontScale=0.7, thickness=2)
-                    cv2.putText(original_img, f"cobb angle: {angle_degree} degree", (final_c2_coords[0][0] + 50, final_c2_coords[0][1] + 20), cv2.FONT_HERSHEY_SIMPLEX, color=(255, 0, 0), fontScale=0.7, thickness=2)
+                    cv2.circle(original_img, (final_sva_point[0], final_sva_point[1]), 3, (255, 0, 0), -1)
+                    
 
                     plt.figure(dpi=300)
                     plt.subplot(3, 3, 2)
