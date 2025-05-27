@@ -175,3 +175,4 @@ results/
 train_data/
 *.pt
 icon.ico
+paths.yaml
