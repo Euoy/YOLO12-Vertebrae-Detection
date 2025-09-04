@@ -255,7 +255,7 @@ class AngleSVACalculator():
         index = np.where(left_half_y == np.max(left_half_y))[0][-1]
         top_left_y = left_half_y[index]
         top_left_x = left_half_x[index]
-        index = np.where(right_half_y == np.max(right_half_y))[0][0]
+        index = np.where(right_half_y == np.max(right_half_y))[0][-1]
         top_right_y = right_half_y[index]
         top_right_x = right_half_x[index]
         if reversed:
@@ -321,8 +321,11 @@ class AngleSVACalculator():
                     c7_edges = self.edge_detection(enhanced_c7_img)
                     c7_indices = np.where(c7_edges != [0])
                     self.c7_coords = np.column_stack((c7_indices[1], c7_indices[0])).tolist()
+                    cv2.imshow("c7", c7_edges)
+                    cv2.imshow("c2", c2_edges)
+                    cv2.waitKey(0)
 
-                    # find c2 and c7 points
+                    # find c2 and c7 points(sva points)
                     c2_bottom_points = self.find_c2_bottom_points(reversed)
                     c7_bottom_points, c7_right_top_point = self.find_c7_bottom_points(reversed)
                     final_c2_coords = [self.coords_translate(c2_bottom_points[0], original_img_name, "c2"), self.coords_translate(c2_bottom_points[1], original_img_name, "c2")]
