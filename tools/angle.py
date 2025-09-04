@@ -307,11 +307,15 @@ class AngleSVACalculator():
                     self.c7_img_height = c7_img.shape[0]
 
                     reversed = self.reversed_check(original_img_name)
+                    # original_img_name_without_extension = original_img_name.split(".")[0]
+                    # original_img_name_extension = original_img_name.split(".")[1]
                     
                     # image enhancement
                     original_img = cv2.cvtColor(original_img, cv2.COLOR_BGR2RGB)
                     enhanced_c2_img = self.img_enhance(c2_img)
                     enhanced_c7_img = self.img_enhance(c7_img)
+                    # cv2.imwrite(f"{self.result_save_path}\\crops\\c2\\{original_img_name_without_extension}_c2_enh.{original_img_name_extension}", enhanced_c2_img)
+                    # cv2.imwrite(f"{self.result_save_path}\\crops\\c7\\{original_img_name_without_extension}_c7_enh.{original_img_name_extension}", enhanced_c7_img)
                     
                     # find edges
                     c2_edges = self.edge_detection(enhanced_c2_img)
@@ -321,6 +325,9 @@ class AngleSVACalculator():
                     c7_edges = self.edge_detection(enhanced_c7_img)
                     c7_indices = np.where(c7_edges != [0])
                     self.c7_coords = np.column_stack((c7_indices[1], c7_indices[0])).tolist()
+
+                    # cv2.imwrite(f"{self.result_save_path}\\crops\\c2\\{original_img_name_without_extension}_c2_edges.{original_img_name_extension}", c2_edges)
+                    # cv2.imwrite(f"{self.result_save_path}\\crops\\c7\\{original_img_name_without_extension}_c7_edges.{original_img_name_extension}", c7_edges)
 
                     # find c2 and c7 points(sva points)
                     c2_bottom_points = self.find_c2_bottom_points(reversed)
